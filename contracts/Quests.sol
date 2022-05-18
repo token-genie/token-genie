@@ -14,7 +14,28 @@ contract Quests is AccessControl {
         _setRoleAdmin(USER_ROLE, MANAGER_ROLE);
     }
 
-    function approveQuestComplete() public onlyRole(MANAGER_ROLE) {}
+    /*
+    * @dev assigns the wallet that can claim the reward
+    */
+    function approveUser(address _user) public onlyRole(MANAGER_ROLE)  {
+    }
 
-    function redeemReward() public onlyRole(USER_ROLE) {}
+    /*
+    * @dev creates a quest and locks the Star token into the contract 
+    */
+    function createQuest() payable onlyRole(MANAGER_ROLE) public {
+    }
+
+    /*
+    * @dev makes the StarToken locked into the quest claimable by the user
+    */
+    function approveQuestComplete(address _user, uint amount) public onlyRole(MANAGER_ROLE) {
+
+    }
+    /*
+    * @dev allows the user to redeem the StarTokens locked into the Quest
+    */
+    function redeemReward() public onlyRole(USER_ROLE) {
+
+    }
 }
