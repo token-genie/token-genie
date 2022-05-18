@@ -10,6 +10,7 @@ describe("StarToken Tests", () =>{
     let acc1: SignerWithAddress;
 
     const oneStarTokenInWei = ethers.utils.parseEther("1");
+    const MINTER_ROLE = ethers.utils.solidityKeccak256(['string'],['MINTER_ROLE']);
 
     beforeEach(async () => {
         starTokenContract = await getStarToken({ contractName: "StarToken", deployParams: [] });
@@ -20,7 +21,7 @@ describe("StarToken Tests", () =>{
         it("Should revert if the caller does not have minter role", async () => {
             await expect(
                 starTokenContract.connect(acc1).mint(deployer.address, oneStarTokenInWei)
-            ).to.be.revertedWith("StarToken: must have minter role to mint");
+            ).to.be.revertedWith(`AccessControl: account ${acc1.address.toLowerCase()} is missing role ${MINTER_ROLE.toLowerCase()}`);
           });
 
         it("Should work when called by the owner", async () => {
