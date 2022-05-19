@@ -1,8 +1,12 @@
 import { BaseContract, ContractFactory } from "ethers";
 import { ethers } from "hardhat";
 import {
-StarToken,
-  StarToken__factory as StarTokenFactory
+  StarToken,
+  StarToken__factory as StarTokenFactory,
+  Quests,
+  Quests__factory as QuestsFactory,
+  Rewards,
+  Rewards__factory as RewardsFactory,
 } from "../typechain";
 
 type GetContractParams<Factory extends ContractFactory> =
@@ -55,3 +59,9 @@ export const getContract = async <
 
 export const getStarToken = (params: GetContractParams<StarTokenFactory>) =>
   getContract<StarTokenFactory, StarToken>(params);
+
+export const getQuests = (params: GetContractParams<QuestsFactory>) =>
+  getContract<QuestsFactory, Quests>(params);
+
+export const getRewards = (params: GetContractParams<RewardsFactory>) =>
+  getContract<RewardsFactory, Rewards>(params);
