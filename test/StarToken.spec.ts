@@ -14,8 +14,10 @@ describe("StarToken Tests", () => {
     ["string"],
     ["MINTER_ROLE"]
   );
+
   const DEFAULT_ADMIN_ROLE =
     "0x0000000000000000000000000000000000000000000000000000000000000000";
+  
 
   beforeEach(async () => {
     starTokenContract = await getStarToken({
