@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
-contract Quests is AccessControl {
+contract Challenges is AccessControl {
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
     bytes32 public constant USER_ROLE = keccak256("USER_ROLE");
 
@@ -23,19 +23,19 @@ contract Quests is AccessControl {
     /*
     * @dev creates a quest and locks the Star token into the contract 
     */
-    function createQuest() payable onlyRole(MANAGER_ROLE) public {
+    function createChallenge() payable onlyRole(MANAGER_ROLE) public {
     }
 
     /*
     * @dev makes the StarToken locked into the quest claimable by the user
     */
-    function approveQuestComplete(address _user, uint amount) public onlyRole(MANAGER_ROLE) {
+    function approveChallengeComplete(address _user, uint amount) public onlyRole(MANAGER_ROLE) {
 
     }
     /*
     * @dev allows the user to redeem the StarTokens locked into the Quest
     */
-    function redeemReward() public onlyRole(USER_ROLE) {
+    function redeem() public onlyRole(USER_ROLE) {
 
     }
 }
