@@ -13,6 +13,18 @@ describe("StarToken Tests", () => {
   const DEFAULT_ADMIN_ROLE =
     "0x0000000000000000000000000000000000000000000000000000000000000000";
 
+  function generateRandomNumber() {
+    return Math.floor(Math.random() * (2 ^ (50 - 1)) + 1);
+  }
+
+  async function checkBalance(
+    account: SignerWithAddress,
+    expectedBalance: Number
+  ) {
+    let balance = await starTokenContract.balanceOf(account.address);
+    await expect(balance).to.equal(expectedBalance);
+  }
+
   beforeEach(async () => {
     starTokenContract = await getStarToken({
       contractName: "StarToken",
@@ -42,95 +54,56 @@ describe("StarToken Tests", () => {
   });
 
   describe("mint", () => {
-    it("1ETH should mint 200,000 StarTokens", async () => {
-      // Checking initial contract balance
-      let contractBalance = await ethers.provider.getBalance(starTokenContract.address);
-      expect(contractBalance).to.equal(0);
+    it("It should not mint if minting is paused", async () => {
+      // Pause Contract
+      await starTokenContract.pause();
 
-      //Acc1 mints 1ETH worth of tokens
-      await starTokenContract
-        .connect(acc1)
-        .mint(acc1.address, 200000, { value: ethers.utils.parseEther("1") });
-      const balance = await starTokenContract.balanceOf(acc1.address);
-      expect(balance).to.equal(200000);
-    
-      //Contract now has 1ETH stored
-      contractBalance = await ethers.provider.getBalance(starTokenContract.address);
-      expect(contractBalance).to.equal(ethers.utils.parseEther("1"));
-    });
+      // Generate Random Number
+      let randomAmount = generateRandomNumber();
 
-    it("1ETH should not mint any other amounts", async () => {
-      // Checking initial contract balance
-      let contractBalance = await ethers.provider.getBalance(starTokenContract.address);
-      expect(contractBalance).to.equal(0);
-
-      let randomAmount: number = Math.floor(Math.random() * (2 ^ (50 - 1)) + 1);
-      if (randomAmount == 200000) randomAmount++;
-
+      // Try to mint
       await expect(
-        starTokenContract.connect(acc1).mint(deployer.address, randomAmount)
-      ).to.be.revertedWith(`StarToken: Incorrect Mint Price`);
+        starTokenContract.connect(acc1).mint(acc1.address, randomAmount)
+      ).to.be.revertedWith(`Pausable: paused`);
 
-      //Contract balance is not changed
-      contractBalance = await ethers.provider.getBalance(starTokenContract.address);
-      expect(contractBalance).to.equal(0);
+      // Check Balance = 0
+      await checkBalance(acc1, 0);
     });
-  });
 
-  describe("withdraw", () => {
-    it("Should revert if the caller does not have DEFAULT_ADMIN_ROLE role", async () => {
-      // Checking initial contract balance
-      let contractBalance = await ethers.provider.getBalance(starTokenContract.address);
-      expect(contractBalance).to.equal(0);
+    it("It should mint if minting is unpaused", async () => {
+      // Pause Contract
+      await starTokenContract.pause();
 
-      //Acc2 Purchases 200000 Tokens
-      await starTokenContract
-        .connect(acc2)
-        .mint(acc2.address, 200000, { value: ethers.utils.parseEther("1") });
-      
-      //Contract now has 1ETH stored
-      contractBalance = await ethers.provider.getBalance(starTokenContract.address);
-      expect(contractBalance).to.equal(ethers.utils.parseEther("1"));
+      // Generate Random Number
+      let randomAmount = generateRandomNumber();
 
-      // Acc1 Tries to Widthraw Funds
+      // Try to mint
       await expect(
-        starTokenContract.connect(acc1).widthdraw(acc1.address)
-      ).to.be.revertedWith(
-        `AccessControl: account ${acc1.address.toLowerCase()} is missing role ${DEFAULT_ADMIN_ROLE.toLowerCase()}`
-      );
-      
-      //Contract balance is still the same
-      contractBalance = await ethers.provider.getBalance(starTokenContract.address);
-      expect(contractBalance).to.equal(ethers.utils.parseEther("1"));
+        starTokenContract.connect(acc1).mint(acc1.address, randomAmount)
+      ).to.be.revertedWith(`Pausable: paused`);
+
+      // Check Balance = 0
+      await checkBalance(acc1, 0);
+
+      // Unpause contract
+      await starTokenContract.unpause();
+
+      // Retry Minting
+      await starTokenContract.connect(acc1).mint(acc1.address, randomAmount);
+
+      // Check Balance = randomAmount
+      await checkBalance(acc1, randomAmount);
     });
 
-    it("Should work when called by the owner", async () => {
-      // Checking initial contract balance
-      let contractBalance = await ethers.provider.getBalance(starTokenContract.address);
-      expect(contractBalance).to.equal(0);
+    it("It should mint the amount requested to mint", async () => {
+      // Generate Random Number
+      let randomAmount = generateRandomNumber();
 
-      let deployerInitialBalance = await ethers.provider.getBalance(deployer.address);
+      // Try to mint
+      await starTokenContract.connect(acc1).mint(acc1.address, randomAmount);
 
-      //Acc2 Purchases 200000 Tokens
-      await starTokenContract
-        .connect(acc2)
-        .mint(acc2.address, 200000, { value: ethers.utils.parseEther("1") });
-          
-      //Contract now has 1ETH stored
-      contractBalance = await ethers.provider.getBalance(starTokenContract.address);
-      expect(contractBalance).to.equal(ethers.utils.parseEther("1"));
-
-      let withdrawTx = await starTokenContract.connect(deployer).widthdraw(deployer.address)
-      let txReceipt = await withdrawTx.wait();
-      let withdrawGas = ethers.BigNumber.from(
-        txReceipt.gasUsed.mul(txReceipt.effectiveGasPrice)
-      );
-      
-      let deployerLaterBalance = await ethers.provider.getBalance(deployer.address);
-      contractBalance = await ethers.provider.getBalance(starTokenContract.address);
-
-      expect(contractBalance).to.equal(0);
-      expect(deployerLaterBalance).to.equal(deployerInitialBalance.sub(withdrawGas).add(ethers.utils.parseEther("1")))
+      // Check Balance = randomAmount
+      await checkBalance(acc1, randomAmount);
     });
   });
 });
