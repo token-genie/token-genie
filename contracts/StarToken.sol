@@ -9,12 +9,12 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 /// @custom:security-contact sunny@flowstation.io
 contract StarToken is ERC20, ERC20Burnable, Pausable, AccessControl {
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
-    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    uint256 public tokenPrice = (10**13)/2; // 1 ETH buys you 200K Tokens
+
 
     constructor() ERC20("StarToken", "STAR") {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(PAUSER_ROLE, msg.sender);
-        _grantRole(MINTER_ROLE, msg.sender);
     }
 
     function pause() public onlyRole(PAUSER_ROLE) {
@@ -25,7 +25,8 @@ contract StarToken is ERC20, ERC20Burnable, Pausable, AccessControl {
         _unpause();
     }
 
-    function mint(address to, uint256 amount) public onlyRole(MINTER_ROLE) {
+    function mint(address to, uint256 amount) public payable {
+        require(msg.value == (amount*tokenPrice), "StarToken: Incorrect Mint Price");
         _mint(to, amount);
     }
 
@@ -35,5 +36,10 @@ contract StarToken is ERC20, ERC20Burnable, Pausable, AccessControl {
         uint256 amount
     ) internal override whenNotPaused {
         super._beforeTokenTransfer(from, to, amount);
+    }
+
+    function widthdraw(address payable _to) public payable onlyRole(DEFAULT_ADMIN_ROLE) {
+        (bool sent, ) = _to.call{value: address(this).balance}("");
+        require(sent, "Failed to send Ether");
     }
 }
