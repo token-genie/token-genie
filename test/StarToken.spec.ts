@@ -10,8 +10,10 @@ describe("StarToken Tests", () => {
   let acc1: SignerWithAddress;
   let acc2: SignerWithAddress;
 
+
   const DEFAULT_ADMIN_ROLE =
     "0x0000000000000000000000000000000000000000000000000000000000000000";
+  
 
   function generateRandomNumber() {
     return Math.floor(Math.random() * (2 ^ (50 - 1)) + 1);
