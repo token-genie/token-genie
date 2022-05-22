@@ -21,15 +21,17 @@ contract Challenges is AccessControl {
     /*
     * @dev challenge struct to keep the admin, balance of the challenge, and users
     */
+
     struct Challenge {
         uint id;
         address admin;
         uint256 starsToEarn;
         address[] users;
+        bool[] completed;
     }
 
     mapping (uint => address) challengeOwners;
-    mapping (uint => Challenge) challenges;
+    mapping (uint => Challenge) challenges; // id to challenge
 
     uint256 numberOfChallenges;
 
@@ -50,6 +52,7 @@ contract Challenges is AccessControl {
         // TODO: Additional tests that challenge exists and owned by the manager
         _setupRole(USER_ROLE, _user);
         challenges[id].users.push(_user);
+        challenges[id].completed.push(false);
         emit UserApproved(id, challenges[id].users);
     }
 
@@ -59,28 +62,50 @@ contract Challenges is AccessControl {
     // OpenZeppelin counter to increase
     function createChallenge(uint _starsToEarn) external onlyRole(MANAGER_ROLE) {
         address[] memory users;
+        bool[] memory completed;
         challengeOwners[numberOfChallenges] = msg.sender;
-        challenges[numberOfChallenges] = Challenge(numberOfChallenges, msg.sender, _starsToEarn, users);
+        challenges[numberOfChallenges] = Challenge(numberOfChallenges, msg.sender, _starsToEarn, users, completed);
         numberOfChallenges = numberOfChallenges.add(1);
         emit ChallengeCreated(msg.sender, _starsToEarn, numberOfChallenges);
     }
 
-    // TODO: Users need to show that they have finished their quest
-    
+    /*
+    * @dev user approves that they finished a challenge
+    */
+    function challengeComplete(uint id) external onlyRole(USER_ROLE) {
+        address[] storage users = challenges[id].users;
+        // Finds the user to delete from the array
+        uint index;
+        bool found = false;
+        for (uint i = 0; i < users.length; i++) {
+            if (users[i] == msg.sender){
+                index = i;
+                found = true;
+            }
+        }
+        require(found == true, "could not find the dedicated user in the array");
+        challenges[id].completed[index] = true;
+    }
+
     /*
     * @dev this code is not optimized
     */
     function approveChallengeComplete(address _user, uint id) public onlyRole(MANAGER_ROLE) {
         // TODO: Optimizations if have time
         address[] storage users = challenges[id].users;
+        bool[] storage completed = challenges[id].completed;
 
         // Finds the user to delete from the array
         uint index;
+        bool found = false;
         for (uint i = 0; i < users.length; i++) {
             if (users[i] == _user){
                 index = i;
+                found = true;
             }
         }
+
+        require(found == true, "could not find the dedicated user in the array");
 
         // Deletes the user from the array
         users[index] = users[users.length - 1];
@@ -89,10 +114,16 @@ contract Challenges is AccessControl {
         // Updates the rest
         challenges[id].users = users;
 
+        // Deletes the completed from the array
+        completed[index] = completed[completed.length - 1];
+        completed.pop();
+
+        // Updates the rest
+        challenges[id].completed = completed;
+
         // mints money to the user
-        // TODO: writes test for it
-        // Issues around minting role 
-        // _starToken.mint(_user, challenges[id].starsToEarn);
+        // minting should only be done by the manager anyway
+        _starToken.mint(_user, challenges[id].starsToEarn);
 
         emit ChallengeCompleted(id, challenges[id].users, challenges[id].starsToEarn);
     }
