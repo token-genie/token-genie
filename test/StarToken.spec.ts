@@ -8,23 +8,31 @@ describe("StarToken Tests", () => {
   let starTokenContract: StarToken;
   let deployer: SignerWithAddress;
   let acc1: SignerWithAddress;
+  let acc2: SignerWithAddress;
 
-  const oneStarTokenInWei = ethers.utils.parseEther("1");
-  const MINTER_ROLE = ethers.utils.solidityKeccak256(
-    ["string"],
-    ["MINTER_ROLE"]
-  );
 
   const DEFAULT_ADMIN_ROLE =
     "0x0000000000000000000000000000000000000000000000000000000000000000";
   
+
+  function generateRandomNumber() {
+    return Math.floor(Math.random() * (2 ^ (50 - 1)) + 1);
+  }
+
+  async function checkBalance(
+    account: SignerWithAddress,
+    expectedBalance: Number
+  ) {
+    let balance = await starTokenContract.balanceOf(account.address);
+    await expect(balance).to.equal(expectedBalance);
+  }
 
   beforeEach(async () => {
     starTokenContract = await getStarToken({
       contractName: "StarToken",
       deployParams: [],
     });
-    [deployer, acc1] = await ethers.getSigners();
+    [deployer, acc1, acc2] = await ethers.getSigners();
   });
 
   describe("deploy", () => {
@@ -48,21 +56,56 @@ describe("StarToken Tests", () => {
   });
 
   describe("mint", () => {
-    it("Should revert if the caller does not have minter role", async () => {
+    it("It should not mint if minting is paused", async () => {
+      // Pause Contract
+      await starTokenContract.pause();
+
+      // Generate Random Number
+      let randomAmount = generateRandomNumber();
+
+      // Try to mint
       await expect(
-        starTokenContract
-          .connect(acc1)
-          .mint(deployer.address, oneStarTokenInWei)
-      ).to.be.revertedWith(
-        `AccessControl: account ${acc1.address.toLowerCase()} is missing role ${MINTER_ROLE.toLowerCase()}`
-      );
+        starTokenContract.connect(acc1).mint(acc1.address, randomAmount)
+      ).to.be.revertedWith(`Pausable: paused`);
+
+      // Check Balance = 0
+      await checkBalance(acc1, 0);
     });
 
-    it("Should work when called by the owner", async () => {
-      await starTokenContract.mint(deployer.address, oneStarTokenInWei);
+    it("It should mint if minting is unpaused", async () => {
+      // Pause Contract
+      await starTokenContract.pause();
 
-      const balance = await starTokenContract.balanceOf(deployer.address);
-      expect(balance).to.equal(oneStarTokenInWei);
+      // Generate Random Number
+      let randomAmount = generateRandomNumber();
+
+      // Try to mint
+      await expect(
+        starTokenContract.connect(acc1).mint(acc1.address, randomAmount)
+      ).to.be.revertedWith(`Pausable: paused`);
+
+      // Check Balance = 0
+      await checkBalance(acc1, 0);
+
+      // Unpause contract
+      await starTokenContract.unpause();
+
+      // Retry Minting
+      await starTokenContract.connect(acc1).mint(acc1.address, randomAmount);
+
+      // Check Balance = randomAmount
+      await checkBalance(acc1, randomAmount);
+    });
+
+    it("It should mint the amount requested to mint", async () => {
+      // Generate Random Number
+      let randomAmount = generateRandomNumber();
+
+      // Try to mint
+      await starTokenContract.connect(acc1).mint(acc1.address, randomAmount);
+
+      // Check Balance = randomAmount
+      await checkBalance(acc1, randomAmount);
     });
   });
 });
