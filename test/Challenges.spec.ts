@@ -12,6 +12,7 @@ describe("Challenges", function () {
 	let challenges: Challenges;
 	let deployer: SignerWithAddress;
   let acc1: SignerWithAddress;
+  let acc2: SignerWithAddress;
   let user: SignerWithAddress;
 
   const oneStarTokenInWei = ethers.utils.parseEther("1");
@@ -38,6 +39,7 @@ describe("Challenges", function () {
     
     deployer = accounts[0];
 		acc1 = accounts[1];
+    acc2 = accounts[2];
     
 
     starTokenContract = await getStarToken({
@@ -140,6 +142,34 @@ describe("Challenges", function () {
           })
         });
 
+        describe("the user can complete a challenge that they are approved into", () => {
+          it("should revert if the caller does not have USER_ROLE", async () => {
+            await expect(challenges.connect(deployer).challengeComplete(0))
+            .to.be.revertedWith(
+              `AccessControl: account ${deployer.address.toLowerCase()} is missing role ${USER_ROLE.toLowerCase()}`
+            );
+          })
+
+          it("user can declare that they have completed a challenge", async () => {
+            // Creates the challenge
+            await expect(challenges.connect(deployer).createChallenge(10))
+            .to.emit(challenges, "ChallengeCreated")
+            .withArgs(deployer.address, 10, 1);
+            
+            // Approves the user and checks that the user is added
+            await expect(challenges.connect(deployer).approveUser(acc1.address, 0))
+            .to.emit(challenges, "UserApproved")
+            .withArgs(0, [acc1.address]);
+            
+            // Completes the challenge
+            await expect(challenges.connect(acc1).challengeComplete(0))
+            .to.emit(challenges, "ChallengeCompleted")
+            .withArgs(0,[true]);
+          })
+
+        });
+        
+
         describe("approves that the challenge is completed for a given user", () => {
           it("should revert if the caller does not have MANAGER_ROLE", async () => {
             await expect(challenges.connect(acc1).approveUser(deployer.address, 0))
@@ -159,12 +189,18 @@ describe("Challenges", function () {
             .to.emit(challenges, "UserApproved")
             .withArgs(0, [acc1.address]);
 
-            await expect(challenges.connect(deployer).approveChallengeComplete(acc1.address, 0))
+            // Does not complete the challenge
+            await expect(challenges.connect(acc1).challengeComplete(0))
             .to.emit(challenges, "ChallengeCompleted")
-            .withArgs(0, [], 10);
+            .withArgs(0,[true]);
 
+            // approves that the challenge is completed
+            await expect(challenges.connect(deployer).approveChallengeComplete(acc1.address, 0))
+            .to.emit(challenges, "ChallengeApproved")
+            .withArgs(0, [], 10);
           });
         });
         
+       
         
 });

@@ -15,7 +15,8 @@ contract Challenges is AccessControl {
 
     event ChallengeCreated(address admin, uint balance, uint id);
     event UserApproved(uint id, address[] users);
-    event ChallengeCompleted(uint id, address[] users, uint starsToEarn);
+    event ChallengeApproved(uint id, address[] users, uint starsToEarn);
+    event ChallengeCompleted(uint id, bool[] completed);
 
 
     /*
@@ -27,7 +28,7 @@ contract Challenges is AccessControl {
         address admin;
         uint256 starsToEarn;
         address[] users;
-        bool[] completed;
+        bool[] completed; // 1-to-1 mapping to users, so that we know who
     }
 
     mapping (uint => address) challengeOwners;
@@ -85,6 +86,7 @@ contract Challenges is AccessControl {
         }
         require(found == true, "could not find the dedicated user in the array");
         challenges[id].completed[index] = true;
+        emit ChallengeCompleted(id, challenges[id].completed);
     }
 
     /*
@@ -106,7 +108,7 @@ contract Challenges is AccessControl {
         }
 
         require(found == true, "could not find the dedicated user in the array");
-
+        require(completed[index] == true, "user has not completed the challenge");
         // Deletes the user from the array
         users[index] = users[users.length - 1];
         users.pop();
@@ -122,9 +124,9 @@ contract Challenges is AccessControl {
         challenges[id].completed = completed;
 
         // mints money to the user
-        // minting should only be done by the manager anyway
+        // TODO: Write tests for this
         _starToken.mint(_user, challenges[id].starsToEarn);
 
-        emit ChallengeCompleted(id, challenges[id].users, challenges[id].starsToEarn);
+        emit ChallengeApproved(id, challenges[id].users, challenges[id].starsToEarn);
     }
 }
