@@ -31,7 +31,8 @@ contract Challenges is AccessControl {
         bool[] completed; // 1-to-1 mapping to users, so that we know who
     }
 
-    mapping (uint => address) challengeOwners;
+    // mapping (uint => address) challengeOwners;
+    mapping (address => uint[]) challengeOwners; // address to challenge id
     mapping (uint => Challenge) challenges; // id to challenge
 
     uint256 numberOfChallenges;
@@ -64,7 +65,7 @@ contract Challenges is AccessControl {
     function createChallenge(uint _starsToEarn) external onlyRole(MANAGER_ROLE) {
         address[] memory users;
         bool[] memory completed;
-        challengeOwners[numberOfChallenges] = msg.sender;
+        challengeOwners[msg.sender].push(numberOfChallenges);
         challenges[numberOfChallenges] = Challenge(numberOfChallenges, msg.sender, _starsToEarn, users, completed);
         numberOfChallenges = numberOfChallenges.add(1);
         emit ChallengeCreated(msg.sender, _starsToEarn, numberOfChallenges);
