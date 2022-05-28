@@ -116,7 +116,7 @@ contract Challenges is AccessControl {
         challenges[_id].usersParticipating[msg.sender], challenges[_id].usersCompeting[msg.sender]);
     }
 
-    function getOwnChallenges() public view onlyRole(USER_ROLE) returns (uint[] memory) {
+    function getParticipatingChallenges() public view onlyRole(USER_ROLE) returns (uint[] memory) {
         return challengeParticipants[msg.sender];
     }
 
