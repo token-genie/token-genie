@@ -106,7 +106,7 @@ contract Challenges is AccessControl {
 
     /* 
     * @dev set of getters to use to get the challenges
-    * /
+    */
     function getMyChallenges() public view onlyRole(MANAGER_ROLE)  returns (uint[] memory) {
         return challengeOwners[msg.sender];
     }
