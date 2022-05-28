@@ -14,9 +14,9 @@ contract Challenges is AccessControl {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
     event ChallengeCreated(address admin, uint balance, uint id);
-    event UserApproved(uint id, address[] users);
-    event ChallengeApproved(uint id, address[] users, uint starsToEarn);
-    event ChallengeCompleted(uint id, bool[] completed);
+    event UserApproved(uint id, bool approved);
+    event ChallengeApproved(uint id, bool approved, uint starsToEarn);
+    event ChallengeCompleted(uint id, bool completed);
 
 
     /*
@@ -27,13 +27,14 @@ contract Challenges is AccessControl {
         uint id;
         address admin;
         uint256 starsToEarn;
-        address[] users;
-        bool[] completed; // 1-to-1 mapping to users, so that we know who
+        mapping (address => bool) usersParticipating;
+        mapping (address => bool) usersCompeting;
     }
 
-    // mapping (uint => address) challengeOwners;
     mapping (address => uint[]) challengeOwners; // address to challenge id
     mapping (uint => Challenge) challenges; // id to challenge
+    mapping (address => uint[]) challengeParticipants; // address to challenge id (participants)
+
 
     uint256 numberOfChallenges;
 
@@ -53,9 +54,8 @@ contract Challenges is AccessControl {
     function approveUser(address _user, uint id) public onlyRole(MANAGER_ROLE) {
         // TODO: Additional tests that challenge exists and owned by the manager
         _setupRole(USER_ROLE, _user);
-        challenges[id].users.push(_user);
-        challenges[id].completed.push(false);
-        emit UserApproved(id, challenges[id].users);
+        challenges[id].usersParticipating[_user] = true;
+        emit UserApproved(id, challenges[id].usersParticipating[_user]);
     }
 
     /*
@@ -63,10 +63,11 @@ contract Challenges is AccessControl {
     */
     // OpenZeppelin counter to increase
     function createChallenge(uint _starsToEarn) external onlyRole(MANAGER_ROLE) {
-        address[] memory users;
-        bool[] memory completed;
+        Challenge storage myChallenge = challenges[numberOfChallenges];
+        myChallenge.id = numberOfChallenges;
+        myChallenge.admin = msg.sender;
+        myChallenge.starsToEarn = _starsToEarn;
         challengeOwners[msg.sender].push(numberOfChallenges);
-        challenges[numberOfChallenges] = Challenge(numberOfChallenges, msg.sender, _starsToEarn, users, completed);
         numberOfChallenges = numberOfChallenges.add(1);
         emit ChallengeCreated(msg.sender, _starsToEarn, numberOfChallenges);
     }
@@ -75,19 +76,11 @@ contract Challenges is AccessControl {
     * @dev user approves that they finished a challenge
     */
     function challengeComplete(uint id) external onlyRole(USER_ROLE) {
-        address[] storage users = challenges[id].users;
-        // Finds the user to delete from the array
-        uint index;
-        bool found = false;
-        for (uint i = 0; i < users.length; i++) {
-            if (users[i] == msg.sender){
-                index = i;
-                found = true;
-            }
-        }
-        require(found == true, "could not find the dedicated user in the array");
-        challenges[id].completed[index] = true;
-        emit ChallengeCompleted(id, challenges[id].completed);
+        mapping (address => bool) storage _usersParticipating = challenges[id].usersParticipating;
+        mapping (address => bool) storage _usersCompeting = challenges[id].usersCompeting;
+        require(_usersParticipating[msg.sender] == true, "could not find the dedicated user in the array");
+        _usersCompeting[msg.sender] = true;
+        emit ChallengeCompleted(id, challenges[id].usersCompeting[msg.sender]);
     }
 
     /*
@@ -95,39 +88,36 @@ contract Challenges is AccessControl {
     */
     function approveChallengeComplete(address _user, uint id) public onlyRole(MANAGER_ROLE) {
         // TODO: Optimizations if have time
-        address[] storage users = challenges[id].users;
-        bool[] storage completed = challenges[id].completed;
+        mapping (address => bool) storage _usersParticipating = challenges[id].usersParticipating;
+        mapping (address => bool) storage _usersCompeting = challenges[id].usersCompeting;
 
-        // Finds the user to delete from the array
-        uint index;
-        bool found = false;
-        for (uint i = 0; i < users.length; i++) {
-            if (users[i] == _user){
-                index = i;
-                found = true;
-            }
-        }
+        require(_usersParticipating[_user] == true, "could not find the dedicated user in the array");
+        require(_usersCompeting[_user] == true, "user has not completed the challenge");
 
-        require(found == true, "could not find the dedicated user in the array");
-        require(completed[index] == true, "user has not completed the challenge");
-        // Deletes the user from the array
-        users[index] = users[users.length - 1];
-        users.pop();
-
-        // Updates the rest
-        challenges[id].users = users;
-
-        // Deletes the completed from the array
-        completed[index] = completed[completed.length - 1];
-        completed.pop();
-
-        // Updates the rest
-        challenges[id].completed = completed;
+        _usersParticipating[_user] = false;
+        _usersCompeting[_user] = false;
 
         // mints money to the user
         // TODO: Write tests for this
         _starToken.mint(_user, challenges[id].starsToEarn);
 
-        emit ChallengeApproved(id, challenges[id].users, challenges[id].starsToEarn);
+        emit ChallengeApproved(id, challenges[id].usersParticipating[_user], challenges[id].starsToEarn);
     }
+
+    /* 
+    * @dev set of getters to use to get the challenges
+    * /
+    function getMyChallenges() public view onlyRole(MANAGER_ROLE)  returns (uint[] memory) {
+        return challengeOwners[msg.sender];
+    }
+
+    function getChallenge(uint _id) public view returns (uint id, address admin, uint starsToEarn, bool participating, bool completed) {
+        return (challenges[_id].id, challenges[_id].admin, challenges[_id].starsToEarn, 
+        challenges[_id].usersParticipating[msg.sender], challenges[_id].usersCompeting[msg.sender]);
+    }
+
+    function getOwnChallenges() public view onlyRole(USER_ROLE) returns (uint[] memory) {
+        return challengeParticipants[msg.sender];
+    }
+
 }

@@ -138,7 +138,7 @@ describe("Challenges", function () {
             // Approves the user and checks that the user is added
             await expect(challenges.connect(deployer).approveUser(acc1.address, 0))
             .to.emit(challenges, "UserApproved")
-            .withArgs(0, [acc1.address]);
+            .withArgs(0, true);
           })
         });
 
@@ -151,7 +151,7 @@ describe("Challenges", function () {
           })
 
           it("user can declare that they have completed a challenge", async () => {
-            // Creates the challenge
+            // Creates the challengeuser can declare that they have completed a challenge:
             await expect(challenges.connect(deployer).createChallenge(10))
             .to.emit(challenges, "ChallengeCreated")
             .withArgs(deployer.address, 10, 1);
@@ -159,12 +159,12 @@ describe("Challenges", function () {
             // Approves the user and checks that the user is added
             await expect(challenges.connect(deployer).approveUser(acc1.address, 0))
             .to.emit(challenges, "UserApproved")
-            .withArgs(0, [acc1.address]);
+            .withArgs(0, true);
             
             // Completes the challenge
             await expect(challenges.connect(acc1).challengeComplete(0))
             .to.emit(challenges, "ChallengeCompleted")
-            .withArgs(0,[true]);
+            .withArgs(0,true);
           })
 
         });
@@ -187,17 +187,17 @@ describe("Challenges", function () {
             // Approves the user and checks that the user is added
             await expect(challenges.connect(deployer).approveUser(acc1.address, 0))
             .to.emit(challenges, "UserApproved")
-            .withArgs(0, [acc1.address]);
+            .withArgs(0, true);
 
             // Does not complete the challenge
             await expect(challenges.connect(acc1).challengeComplete(0))
             .to.emit(challenges, "ChallengeCompleted")
-            .withArgs(0,[true]);
+            .withArgs(0, true);
 
             // approves that the challenge is completed
             await expect(challenges.connect(deployer).approveChallengeComplete(acc1.address, 0))
             .to.emit(challenges, "ChallengeApproved")
-            .withArgs(0, [], 10);
+            .withArgs(0, false, 10);
           });
         });
         
