@@ -32,7 +32,7 @@ contract Challenges is AccessControl {
         string description; 
         uint256 starsToEarn;
         mapping (address => bool) usersParticipating;
-        mapping (address => bool) usersCompeting;
+        mapping (address => bool) usersCompleted; 
     }
 
     mapping (address => uint[]) challengeOwners; // address to challenge id
@@ -81,10 +81,10 @@ contract Challenges is AccessControl {
     */
     function challengeComplete(uint id) external  {
         mapping (address => bool) storage _usersParticipating = challenges[id].usersParticipating;
-        mapping (address => bool) storage _usersCompeting = challenges[id].usersCompeting;
+        mapping (address => bool) storage _usersCompleted = challenges[id].usersCompleted;
         require(_usersParticipating[msg.sender] == true, "could not find the dedicated user in the array");
-        _usersCompeting[msg.sender] = true;
-        emit ChallengeCompleted(id, challenges[id].usersCompeting[msg.sender]);
+        _usersCompleted[msg.sender] = true;
+        emit ChallengeCompleted(id, challenges[id].usersCompleted[msg.sender]);
     }
 
     /*
@@ -93,13 +93,13 @@ contract Challenges is AccessControl {
     function approveChallengeComplete(address _user, uint id) public ) {
         // TODO: Optimizations if have time
         mapping (address => bool) storage _usersParticipating = challenges[id].usersParticipating;
-        mapping (address => bool) storage _usersCompeting = challenges[id].usersCompeting;
+        mapping (address => bool) storage _usersCompleted = challenges[id].usersCompleted;
 
         require(_usersParticipating[_user] == true, "could not find the dedicated user in the array");
-        require(_usersCompeting[_user] == true, "user has not completed the challenge");
+        require(_usersCompleted[_user] == true, "user has not completed the challenge");
 
         _usersParticipating[_user] = false;
-        _usersCompeting[_user] = false;
+        _usersCompleted[_user] = false;
 
         // mints money to the user
         // TODO: Write tests for this
@@ -117,7 +117,7 @@ contract Challenges is AccessControl {
 
     function getChallenge(uint _id) public view returns (uint id, address admin, uint starsToEarn, bool participating, bool completed) {
         return (challenges[_id].id, challenges[_id].admin, challenges[_id].starsToEarn, 
-        challenges[_id].usersParticipating[msg.sender], challenges[_id].usersCompeting[msg.sender]);
+        challenges[_id].usersParticipating[msg.sender], challenges[_id].usersCompleted[msg.sender]);
     }
 
     function getParticipatingChallenges() public view returns (uint[] memory) {
