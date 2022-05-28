@@ -112,17 +112,18 @@ contract Challenges is AccessControl {
     /* 
     * @dev set of getters to use to get the challenges
     */
-    function getMyChallenges() public view  returns (uint[] memory) {
-        return challengeOwners[msg.sender];
+    function getMyChallenges(address _address) public view returns (uint[] memory) {
+        return challengeOwners[_address];
     }
 
-    function getChallenge(uint _id) public view returns (uint id, address admin, string memory description, uint starsToEarn, bool participating, bool completed) {
-        return (challenges[_id].id, challenges[_id].admin, challenges[_id].starsToEarn, 
-        challenges[_id].description, challenges[_id].usersParticipating[msg.sender], challenges[_id].usersCompleted[msg.sender]);
+    function getChallenge(uint _id, address _address) public view returns (uint id, address admin,
+    string memory description, uint starsToEarn, bool participating, bool completed) {
+        return (challenges[_id].id, challenges[_id].admin, challenges[_id].description,
+        challenges[_id].starsToEarn, challenges[_id].usersParticipating[_address], challenges[_id].usersCompleted[_address]);
     }
 
-    function getParticipatingChallenges() public view returns (uint[] memory) {
-        return challengeParticipants[msg.sender];
+    function getParticipatingChallenges(address _address) public view returns (uint[] memory) {
+        return challengeParticipants[_address];
     }
 
 }
