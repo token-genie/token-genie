@@ -58,6 +58,7 @@ contract Challenges is AccessControl {
     function approveUser(address _user, uint id) public {
         // TODO: Additional tests that challenge exists and owned by the manager
         challenges[id].usersParticipating[_user] = true;
+        challengeParticipants[_user].push(id); 
         emit UserApproved(id, challenges[id].usersParticipating[_user]);
     }
 
@@ -65,7 +66,7 @@ contract Challenges is AccessControl {
     * @dev creates a quest and locks the Star token into the contract
     */
     // OpenZeppelin counter to increase
-    function createChallenge(uint _starsToEarn, string _description) external {
+    function createChallenge(uint _starsToEarn, string memory _description) external {
         Challenge storage myChallenge = challenges[numberOfChallenges];
         myChallenge.id = numberOfChallenges;
         myChallenge.admin = msg.sender;
@@ -90,7 +91,7 @@ contract Challenges is AccessControl {
     /*
     * @dev this code is not optimized
     */
-    function approveChallengeComplete(address _user, uint id) public ) {
+    function approveChallengeComplete(address _user, uint id) public {
         // TODO: Optimizations if have time
         mapping (address => bool) storage _usersParticipating = challenges[id].usersParticipating;
         mapping (address => bool) storage _usersCompleted = challenges[id].usersCompleted;
