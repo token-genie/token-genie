@@ -116,9 +116,9 @@ contract Challenges is AccessControl {
         return challengeOwners[msg.sender];
     }
 
-    function getChallenge(uint _id) public view returns (uint id, address admin, uint starsToEarn, bool participating, bool completed) {
+    function getChallenge(uint _id) public view returns (uint id, address admin, string description, uint starsToEarn, bool participating, bool completed) {
         return (challenges[_id].id, challenges[_id].admin, challenges[_id].starsToEarn, 
-        challenges[_id].usersParticipating[msg.sender], challenges[_id].usersCompleted[msg.sender]);
+        challenges[_id].description, challenges[_id].usersParticipating[msg.sender], challenges[_id].usersCompleted[msg.sender]);
     }
 
     function getParticipatingChallenges() public view returns (uint[] memory) {
